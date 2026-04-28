@@ -9,7 +9,7 @@ from .utils import NapCatAPI
 
 LOG = get_log("BaseFormatTemplate")
 
-DEEPSEEK_API_KEY = "sk-0052a2da82164e2190dc76608b38ecc0"
+DEEPSEEK_API_KEY = "sk-你的DeepSeek密钥，不要提交到公开仓库"
 AI_TRIGGER = "小鹿"
 AI_MODEL = "deepseek-v4-flash"
 
