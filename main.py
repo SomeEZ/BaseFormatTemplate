@@ -8,7 +8,7 @@ from .ai import AIManager
 
 LOG = get_log("BaseFormatTemplate")
 
-DEEPSEEK_API_KEY = "sk-your-api-key-here"
+DEEPSEEK_API_KEY = "sk-0052a2da82164e2190dc76608b38ecc0"
 AI_TRIGGER = "@小鹿"
 AI_MODEL = "deepseek-v4-flash"
 
@@ -62,6 +62,13 @@ class BaseFormatTemplate(NcatBotPlugin):
             print(f"    ├── 包含合并转发: 是 ({lottery.message_info.get_forward_count()} 条消息)")
         else:
             print(f"    ├── 包含合并转发: 否")
+        at_users = lottery.message_info.get_at_users()
+        if at_users:
+            print(f"    ├── @用户: {', '.join(at_users)}")
+        if lottery.message_info.is_at_all():
+            print(f"    ├── @全体: 是")
+        if lottery.message_info.has_reply():
+            print(f"    ├── 引用回复ID: {lottery.message_info.get_reply_message_id()}")
         text_content = lottery.message_info.get_text_content()
         if "合并转发消息" in text_content:
             print(f"    ├── 文字内容: ")
@@ -104,15 +111,29 @@ class BaseFormatTemplate(NcatBotPlugin):
         LOG.info(f"消息已保存至: {saved_path}")
         '''
 
-        if self.ai_manager and text_content and text_content != "无":
+        if self.ai_manager:
             bot_id = str(lottery.basic_info.get_self_id())
-            if f"@{bot_id}" in text_content or AI_TRIGGER in text_content:
+            is_at_bot = lottery.message_info.is_at_user(bot_id)
+            has_deer_keyword = "小鹿" in text_content
+            has_reply = lottery.message_info.has_reply()
+            
+            if is_at_bot or has_deer_keyword or (has_reply and text_content and text_content != "无"):
                 try:
                     await event.reply(text="⏳ 思考中...")
                     
+                    ai_message = ""
+                    if has_reply:
+                        ai_message += "【用户引用回复了之前的消息】\n"
+                        ai_message += f"用户说: {text_content}\n"
+                        ai_message += "请结合上下文回答。\n\n"
+                    ai_message += text_content
+                    
+                    if not ai_message.strip():
+                        ai_message = "你好呀！"
+                    
                     result = await self.ai_manager.chat(
                         user_id=lottery.sender_info.get_user_id(),
-                        message=text_content,
+                        message=ai_message,
                         group_id=lottery.group_info.get_group_id(),
                         thinking=False
                     )
@@ -156,17 +177,28 @@ class BaseFormatTemplate(NcatBotPlugin):
         lottery = LotteryData(event)
         user_id = lottery.sender_info.get_user_id()
         user_message = lottery.message_info.get_text_content()
+        has_reply = lottery.message_info.has_reply()
         
         if not user_message or user_message == "无":
-            await event.reply(text="🤔 请输入您的问题")
-            return
+            if has_reply:
+                user_message = "（引用回复了消息）"
+            else:
+                await event.reply(text="🤔 请输入您的问题")
+                return
         
         try:
             await event.reply(text="⏳ 思考中...")
             
+            ai_message = ""
+            if has_reply:
+                ai_message += "【私聊中用户引用回复了之前的消息】\n"
+                ai_message += f"用户说: {user_message}\n"
+                ai_message += "请结合上下文回答。\n\n"
+            ai_message += user_message
+            
             result = await self.ai_manager.chat(
                 user_id=user_id,
-                message=user_message,
+                message=ai_message,
                 group_id=None,
                 thinking=False
             )

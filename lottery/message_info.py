@@ -1,3 +1,4 @@
+from typing import List, Optional
 from .abc_message_info import ABCMessageInfo
 
 
@@ -11,6 +12,10 @@ class MessageInfo(ABCMessageInfo):
         self._image_urls = []
         self._forward_count = 0
         self._has_forward = False
+        self._at_users = []
+        self._is_at_all = False
+        self._reply_message_id = None
+        self._reply_text = None
 
     def get_message_id(self) -> str:
         return self._message_id
@@ -73,6 +78,56 @@ class MessageInfo(ABCMessageInfo):
                     prefix = f"\n── 消息 {i} ──\n"
                     content += prefix + node_result
         return content
+
+    def get_at_users(self) -> List[str]:
+        return self._at_users
+
+    def is_at_user(self, user_id: str) -> bool:
+        return str(user_id) in self._at_users
+
+    def is_at_all(self) -> bool:
+        return self._is_at_all
+
+    def get_reply_message_id(self) -> Optional[str]:
+        return self._reply_message_id
+
+    def get_reply_text(self) -> Optional[str]:
+        return self._reply_text
+
+    def has_reply(self) -> bool:
+        return self._reply_message_id is not None
+
+    def process_message_chain(self, message_chain: list):
+        text_content = ""
+        for msg in message_chain:
+            msg_type = getattr(msg, 'type', '').lower()
+            msg_data = getattr(msg, 'data', None)
+            
+            if msg_type == 'at':
+                qq = getattr(msg_data, 'qq', '') if msg_data else ''
+                if qq == 'all':
+                    self._is_at_all = True
+                elif qq:
+                    self._at_users.append(str(qq))
+                continue
+            
+            if msg_type == 'reply':
+                reply_id = getattr(msg_data, 'id', '') if msg_data else ''
+                if reply_id:
+                    self._reply_message_id = str(reply_id)
+                continue
+            
+            class_name = type(msg).__name__.lower()
+            if 'forward' in class_name or isinstance(getattr(msg, 'content', None), list):
+                text_content += self.process_forward_message(msg)
+            elif 'node' in class_name:
+                text_content += self.process_node_message(msg)
+            else:
+                if hasattr(msg, 'text'):
+                    text_content += msg.text.strip()
+                if hasattr(msg, 'url') and msg.url:
+                    self.add_image_url(msg.url)
+        self.set_text_content(text_content)
 
     def process_node_message(self, node, depth=1):
         node_content = ""

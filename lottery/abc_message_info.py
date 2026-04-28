@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any, Optional, Dict, List
 
 
 class ABCMessageInfo(ABC):
@@ -49,4 +49,28 @@ class ABCMessageInfo(ABC):
 
     @abstractmethod
     def process_node_message(self, node: Any, depth: int = 1) -> str:
+        pass
+
+    @abstractmethod
+    def get_at_users(self) -> List[str]:
+        pass
+
+    @abstractmethod
+    def is_at_user(self, user_id: str) -> bool:
+        pass
+
+    @abstractmethod
+    def is_at_all(self) -> bool:
+        pass
+
+    @abstractmethod
+    def get_reply_message_id(self) -> Optional[str]:
+        pass
+
+    @abstractmethod
+    def get_reply_text(self) -> Optional[str]:
+        pass
+
+    @abstractmethod
+    def has_reply(self) -> bool:
         pass
