@@ -119,9 +119,10 @@ class BaseFormatTemplate(NcatBotPlugin):
             has_reply = lottery.message_info.has_reply()
             
             if is_at_bot or has_deer_keyword or (has_reply and text_content and text_content != "无"):
-                thinking_msg = None
+                thinking_msg_id = None
                 try:
-                    thinking_msg = await event.reply(text="⏳ 思考中...")
+                    thinking_msg = await event.reply(text="⏳ 深度思考中...")
+                    thinking_msg_id = getattr(thinking_msg, 'message_id', None) or getattr(thinking_msg, 'id', None)
                     
                     ai_message = ""
                     if has_reply:
@@ -137,11 +138,12 @@ class BaseFormatTemplate(NcatBotPlugin):
                         user_id=lottery.sender_info.get_user_id(),
                         message=ai_message,
                         group_id=lottery.group_info.get_group_id(),
-                        thinking=False
+                        thinking=True,
+                        reasoning_effort="high"
                     )
                     
-                    if thinking_msg and hasattr(thinking_msg, 'message_id'):
-                        await NapCatAPI.delete_msg(thinking_msg.message_id)
+                    if thinking_msg_id:
+                        await NapCatAPI.delete_msg(int(thinking_msg_id))
                     
                     await event.reply(text=result['content'])
                     
@@ -150,8 +152,8 @@ class BaseFormatTemplate(NcatBotPlugin):
                     
                 except Exception as e:
                     LOG.error(f"AI 回复失败: {e}")
-                    if thinking_msg and hasattr(thinking_msg, 'message_id'):
-                        await NapCatAPI.delete_msg(thinking_msg.message_id)
+                    if thinking_msg_id:
+                        await NapCatAPI.delete_msg(int(thinking_msg_id))
                     await event.reply(text=f"❌ AI 出错了: {str(e)}")
 
     @registrar.on_group_command("hello", ignore_case=True)
@@ -192,9 +194,10 @@ class BaseFormatTemplate(NcatBotPlugin):
                 await event.reply(text="🤔 请输入您的问题")
                 return
         
-        thinking_msg = None
+        thinking_msg_id = None
         try:
-            thinking_msg = await event.reply(text="⏳ 思考中...")
+            thinking_msg = await event.reply(text="⏳ 深度思考中...")
+            thinking_msg_id = getattr(thinking_msg, 'message_id', None) or getattr(thinking_msg, 'id', None)
             
             ai_message = ""
             if has_reply:
@@ -207,18 +210,19 @@ class BaseFormatTemplate(NcatBotPlugin):
                 user_id=user_id,
                 message=ai_message,
                 group_id=None,
-                thinking=False
+                thinking=True,
+                reasoning_effort="high"
             )
             
-            if thinking_msg and hasattr(thinking_msg, 'message_id'):
-                await NapCatAPI.delete_msg(thinking_msg.message_id)
+            if thinking_msg_id:
+                await NapCatAPI.delete_msg(int(thinking_msg_id))
             
             await event.reply(text=result['content'])
             
         except Exception as e:
             LOG.error(f"AI 私聊回复失败: {e}")
-            if thinking_msg and hasattr(thinking_msg, 'message_id'):
-                await NapCatAPI.delete_msg(thinking_msg.message_id)
+            if thinking_msg_id:
+                await NapCatAPI.delete_msg(int(thinking_msg_id))
             await event.reply(text=f"❌ AI 出错了: {str(e)}")
 
     @registrar.on_private_command("hello", ignore_case=True)

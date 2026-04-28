@@ -3,7 +3,7 @@ from typing import Optional
 
 
 class NapCatAPI:
-    BASE_URL = "http://127.0.0.1:6099"
+    BASE_URL = "http://127.0.0.1:3002"
     
     @staticmethod
     async def delete_msg(message_id: int) -> bool:
@@ -14,5 +14,5 @@ class NapCatAPI:
                     json={"message_id": message_id}
                 ) as resp:
                     return resp.status == 200
-        except Exception as e:
+        except Exception:
             return False
