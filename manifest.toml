@@ -1,0 +1,6 @@
+name = "BaseFormatTemplate"
+version = "1.0.0"
+main = "main.py"
+entry_class = "BaseFormatTemplate"
+author = "NcatBot"
+description = "Base Format Template - ABC Abstract Encapsulation for Message Fields"
