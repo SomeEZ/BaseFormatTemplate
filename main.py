@@ -84,6 +84,7 @@ class BaseFormatTemplate(NcatBotPlugin):
         print(f"    ├── 群名片: {lottery.sender_info.get_card()}")
         print(f"    └── 角色: {lottery.sender_info.get_role()}")
         print("=" * 80)
+        
         '''
         # ========== 构建保存的消息内容 ==========
         message_parts = [text_content] if text_content else []
@@ -102,46 +103,34 @@ class BaseFormatTemplate(NcatBotPlugin):
         )
         LOG.info(f"消息已保存至: {saved_path}")
         '''
+
+        if self.ai_manager and text_content and text_content != "无":
+            bot_id = str(lottery.basic_info.get_self_id())
+            if f"@{bot_id}" in text_content or AI_TRIGGER in text_content:
+                try:
+                    await event.reply(text="⏳ 思考中...")
+                    
+                    result = await self.ai_manager.chat(
+                        user_id=lottery.sender_info.get_user_id(),
+                        message=text_content,
+                        group_id=lottery.group_info.get_group_id(),
+                        thinking=False
+                    )
+                    
+                    reply = f"🤖 小鹿助手\n\n{result['content']}"
+                    await event.reply(text=reply)
+                    
+                    if result['thinking']:
+                        LOG.info(f"AI 思考过程: {result['thinking']}")
+                    
+                except Exception as e:
+                    LOG.error(f"AI 回复失败: {e}")
+                    await event.reply(text=f"❌ AI 出错了: {str(e)}")
+
     @registrar.on_group_command("hello", ignore_case=True)
     async def on_hello(self, event: GroupMessageEvent):
         """收到群消息 'hello' 时回复"""
         await self.api.qq.post_group_msg(event.group_id, text="Hello, World! 👋")
-
-    @registrar.on_group_at_message()
-    async def on_ai_chat(self, event: GroupMessageEvent):
-        """群聊 @机器人 时触发 AI 对话"""
-        if not self.ai_manager:
-            await event.reply(text="❌ AI 功能未配置，请设置 DeepSeek API Key")
-            return
-        
-        lottery = LotteryData(event)
-        user_id = lottery.sender_info.get_user_id()
-        group_id = lottery.group_info.get_group_id()
-        user_message = lottery.message_info.get_text_content()
-        
-        if not user_message or user_message == "无":
-            await event.reply(text="🤔 请输入您的问题")
-            return
-        
-        try:
-            await event.reply(text="⏳ 思考中...")
-            
-            result = await self.ai_manager.chat(
-                user_id=user_id,
-                message=user_message,
-                group_id=group_id,
-                thinking=False
-            )
-            
-            reply = f"🤖 小鹿助手\n\n{result['content']}"
-            await event.reply(text=reply)
-            
-            if result['thinking']:
-                LOG.info(f"AI 思考过程: {result['thinking']}")
-            
-        except Exception as e:
-            LOG.error(f"AI 回复失败: {e}")
-            await event.reply(text=f"❌ AI 出错了: {str(e)}")
 
     @registrar.on_group_command("清除记忆", ignore_case=True)
     async def on_clear_memory(self, event: GroupMessageEvent):
