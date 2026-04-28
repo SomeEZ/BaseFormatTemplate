@@ -9,7 +9,7 @@ from .ai import AIManager
 LOG = get_log("BaseFormatTemplate")
 
 DEEPSEEK_API_KEY = "sk-0052a2da82164e2190dc76608b38ecc0"
-AI_TRIGGER = "@小鹿"
+AI_TRIGGER = "小鹿"
 AI_MODEL = "deepseek-v4-flash"
 
 

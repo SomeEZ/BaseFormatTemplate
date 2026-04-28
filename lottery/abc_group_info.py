@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
+from typing import Optional
 
 
 class ABCGroupInfo(ABC):
     @abstractmethod
-    def get_group_id(self) -> int:
+    def get_group_id(self) -> Optional[int]:
         pass
 
     @abstractmethod

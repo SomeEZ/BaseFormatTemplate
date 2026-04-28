@@ -17,8 +17,8 @@ class LotteryData:
             sub_type=event.data.sub_type
         )
         self.group_info: ABCGroupInfo = LotteryFactory.create_group_info(
-            group_id=event.data.group_id,
-            group_name=event.data.group_name
+            group_id=getattr(event.data, 'group_id', None),
+            group_name=getattr(event.data, 'group_name', None)
         )
         self.message_info: ABCMessageInfo = LotteryFactory.create_message_info(
             message_id=event.data.message_id,
@@ -30,7 +30,7 @@ class LotteryData:
         self.sender_info: ABCSenderInfo = LotteryFactory.create_sender_info(
             user_id=event.data.sender.user_id,
             nickname=event.data.sender.nickname,
-            card=event.data.sender.card,
-            role=event.data.sender.role,
+            card=getattr(event.data.sender, 'card', None),
+            role=getattr(event.data.sender, 'role', None),
             sex=getattr(event.data.sender, 'sex', None)
         )
