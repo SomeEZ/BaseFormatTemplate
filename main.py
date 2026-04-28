@@ -4,21 +4,37 @@ from ncatbot.plugin import NcatBotPlugin
 from ncatbot.utils import get_log
 from .lottery import LotteryData
 from .saveMessage import save_message
+from .ai import AIManager
 
 LOG = get_log("BaseFormatTemplate")
+
+DEEPSEEK_API_KEY = "sk-your-api-key-here"
+AI_TRIGGER = "@小鹿"
+AI_MODEL = "deepseek-v4-flash"
 
 
 class BaseFormatTemplate(NcatBotPlugin):
     name = "BaseFormatTemplate"
-    version = "1.0.0"
+    version = "1.1.0"
     author = "NcatBot"
-    description = "Base Format Template - ABC Abstract Encapsulation for Message Fields"
+    description = "Base Format Template + DeepSeek AI - ABC 抽象封装 + DeepSeek 智能对话"
+
+    def __init__(self):
+        super().__init__()
+        self.ai_manager = None
 
     async def on_load(self):
         LOG.info("BaseFormatTemplate plugin loaded!")
+        if DEEPSEEK_API_KEY and DEEPSEEK_API_KEY != "sk-your-api-key-here":
+            self.ai_manager = AIManager(DEEPSEEK_API_KEY, AI_MODEL)
+            LOG.info(f"DeepSeek AI 已启用，模型: {AI_MODEL}")
+        else:
+            LOG.warning("未配置 DeepSeek API Key，AI 功能未启用")
 
     async def on_close(self):
         LOG.info("BaseFormatTemplate plugin unloaded!")
+        if self.ai_manager:
+            await self.ai_manager.close()
 
     @registrar.on_group_message()
     async def on_group_message(self, event: GroupMessageEvent):
@@ -91,10 +107,87 @@ class BaseFormatTemplate(NcatBotPlugin):
         """收到群消息 'hello' 时回复"""
         await self.api.qq.post_group_msg(event.group_id, text="Hello, World! 👋")
 
-    # @registrar.on_group_command("hi", ignore_case=True)
-    # async def on_hi(self, event: GroupMessageEvent):
-    #     """用 event.reply() 快速回复（自动引用 + @发送者 + 文字）"""
-    #     await event.reply(text="你好呀！这是通过 event.reply() 发送的快速回复 🎉")
+    @registrar.on_group_at_message()
+    async def on_ai_chat(self, event: GroupMessageEvent):
+        """群聊 @机器人 时触发 AI 对话"""
+        if not self.ai_manager:
+            await event.reply(text="❌ AI 功能未配置，请设置 DeepSeek API Key")
+            return
+        
+        lottery = LotteryData(event)
+        user_id = lottery.sender_info.get_user_id()
+        group_id = lottery.group_info.get_group_id()
+        user_message = lottery.message_info.get_text_content()
+        
+        if not user_message or user_message == "无":
+            await event.reply(text="🤔 请输入您的问题")
+            return
+        
+        try:
+            await event.reply(text="⏳ 思考中...")
+            
+            result = await self.ai_manager.chat(
+                user_id=user_id,
+                message=user_message,
+                group_id=group_id,
+                thinking=False
+            )
+            
+            reply = f"🤖 小鹿助手\n\n{result['content']}"
+            await event.reply(text=reply)
+            
+            if result['thinking']:
+                LOG.info(f"AI 思考过程: {result['thinking']}")
+            
+        except Exception as e:
+            LOG.error(f"AI 回复失败: {e}")
+            await event.reply(text=f"❌ AI 出错了: {str(e)}")
+
+    @registrar.on_group_command("清除记忆", ignore_case=True)
+    async def on_clear_memory(self, event: GroupMessageEvent):
+        """清除 AI 对话记忆"""
+        if not self.ai_manager:
+            await event.reply(text="❌ AI 功能未配置")
+            return
+        
+        lottery = LotteryData(event)
+        user_id = lottery.sender_info.get_user_id()
+        group_id = lottery.group_info.get_group_id()
+        
+        self.ai_manager.clear_history(user_id, group_id)
+        await event.reply(text="✅ 对话记忆已清除！")
+
+    @registrar.on_private_message()
+    async def on_private_ai_chat(self, event: PrivateMessageEvent):
+        """私聊自动触发 AI 对话"""
+        if not self.ai_manager:
+            await event.reply(text="❌ AI 功能未配置，请设置 DeepSeek API Key")
+            return
+        
+        lottery = LotteryData(event)
+        user_id = lottery.sender_info.get_user_id()
+        user_message = lottery.message_info.get_text_content()
+        
+        if not user_message or user_message == "无":
+            await event.reply(text="🤔 请输入您的问题")
+            return
+        
+        try:
+            await event.reply(text="⏳ 思考中...")
+            
+            result = await self.ai_manager.chat(
+                user_id=user_id,
+                message=user_message,
+                group_id=None,
+                thinking=False
+            )
+            
+            reply = f"🤖 小鹿助手\n\n{result['content']}"
+            await event.reply(text=reply)
+            
+        except Exception as e:
+            LOG.error(f"AI 私聊回复失败: {e}")
+            await event.reply(text=f"❌ AI 出错了: {str(e)}")
 
     @registrar.on_private_command("hello", ignore_case=True)
     async def on_private_hello(self, event: PrivateMessageEvent):

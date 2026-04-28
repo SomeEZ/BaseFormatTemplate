@@ -2,13 +2,14 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.8+-blue.svg" alt="Python">
-  <img src="https://img.shields.io/badge/Version-1.0.0-green.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-1.1.0-green.svg" alt="Version">
   <img src="https://img.shields.io/badge/Architecture-ABC%20Abstract-orange.svg" alt="ABC">
   <img src="https://img.shields.io/badge/Forward%20Message-Supported-brightgreen.svg" alt="Forward Message">
+  <img src="https://img.shields.io/badge/DeepSeek-AI%20Enabled-blueviolet.svg" alt="DeepSeek AI">
   <img src="https://img.shields.io/badge/NcatBot-Plugin-purple.svg" alt="NcatBot">
 </p>
 
-> ✨ NcatBot 官方标准插件模板 - 基于 ABC 抽象类的消息字段一键访问
+> ✨ NcatBot 官方标准插件模板 - ABC 抽象类封装 + DeepSeek AI 智能对话
 
 ---
 
@@ -36,6 +37,9 @@
 | 手动提取图片 | 自动解析消息链 |
 | 用变量存数据 | 一个对象全部搞定 |
 | 不支持合并转发 | 递归解析多层嵌套 |
+| 无 AI 功能 | DeepSeek 原生接入 |
+| 无对话记忆 | 自动保留 20 轮上下文 |
+| 不支持流式输出 | ✅ 支持流式输出 |
 
 ---
 
@@ -149,6 +153,67 @@ group_name = data.group_info.get_group_name()
 
 ---
 
+## 🤖 DeepSeek AI 对话功能
+
+### ✨ 已实现功能
+
+| 功能 | 说明 |
+|------|------|
+| 🎯 群聊 @机器人 | 群内 @小鹿 自动触发 AI 回复 |
+| 💬 私聊自动回复 | 私聊发送任意消息直接对话 |
+| 🧠 上下文记忆 | 自动保留 20 轮对话历史 |
+| 🔄 清除记忆 | 发送「清除记忆」重置对话 |
+| 💭 思考模式 | 支持 DeepSeek 深度思考模式 |
+| ⚡ 流式输出 | 支持流式响应接口 |
+| 📨 合并转发感知 | AI 可解析合并转发消息内容 |
+
+---
+
+### ⚙️ 快速配置
+
+#### 第一步：获取 API Key
+1. 前往 **https://platform.deepseek.com/** 注册账号
+2. 在 **API Keys** 页面创建新的 API Key
+3. 获得类似 `sk-xxxxxx` 的密钥
+
+#### 第二步：配置插件
+打开 `main.py`，修改顶部配置：
+```python
+# ========== DeepSeek 配置 ==========
+DEEPSEEK_API_KEY = "sk-你的API密钥"
+AI_TRIGGER = "@小鹿"
+AI_MODEL = "deepseek-v4-flash"  # 或 deepseek-v4-pro
+```
+
+#### 第三步：使用
+| 场景 | 使用方式 |
+|------|----------|
+| **群聊** | `@小鹿 你好，介绍一下你自己` |
+| **私聊** | 直接发送消息即可对话 |
+| **清除记忆** | 群聊发送 `清除记忆` |
+
+---
+
+### 💡 AI 使用示例
+
+```python
+# ========== 群聊对话 ==========
+用户: @小鹿 帮我写一个 Python 冒泡排序
+AI: 🤖 小鹿助手
+
+    好的！这是 Python 冒泡排序的实现：
+
+    def bubble_sort(arr):
+        n = len(arr)
+        for i in range(n):
+            for j in range(0, n-i-1):
+                if arr[j] > arr[j+1]:
+                    arr[j], arr[j+1] = arr[j+1], arr[j]
+        return arr
+```
+
+---
+
 ## 💪 完整示例
 
 ### 示例 1：简单抽奖
@@ -196,28 +261,34 @@ for i, image_url in enumerate(data.message_info.get_image_urls(), 1):
 ```
 BaseFormatTemplate/
 ├── 📄 README.md               👈 本文档（中英文双语）
+├── 📄 .gitignore              Git 忽略配置
 ├── 📄 manifest.toml           NcatBot 插件配置文件
-├── 📄 main.py                 插件主入口
+├── 📄 main.py                 插件主入口（含 AI 集成）
 ├── 📄 saveMessage.py            消息保存工具
 │
-└── 📂 lottery/                核心数据封装模块
+├── 📂 ai/                     🤖 DeepSeek AI 模块
 │   ├── 📄 __init__.py               模块导出
-│   ├── 📄 lottery_data.py         🎁 主入口类（你需要的）
-│   ├── 📄 lottery_factory.py      🏭 工厂类（高级用法）
-│   │
-│   ├── 📐 抽象接口层
-│   │   ├── abc_time_info.py          时间信息接口
-│   │   ├── abc_basic_info.py       基本信息接口
-│   │   ├── abc_group_info.py       群组信息接口
-│   │   ├── abc_message_info.py     消息信息接口（含合并转发）
-│   │   └── abc_sender_info.py      发送者信息接口
-│   │
-│   └── ⚙️ 具体实现层
-│       ├── time_info.py              时间信息实现
-│       ├── basic_info.py           基本信息实现
-│       ├── group_info.py           群组信息实现
-│       ├── message_info.py       消息信息实现（递归解析嵌套）
-│       └── sender_info.py          发送者信息实现
+│   ├── 📄 deepseek_client.py      DeepSeek API 客户端
+│   └── � ai_manager.py           对话管理器（上下文记忆）
+│
+└── �📂 lottery/                📐 数据封装核心模块
+    ├── 📄 __init__.py               模块导出
+    ├── 📄 lottery_data.py         🎁 主入口类（你需要的）
+    ├── 📄 lottery_factory.py      🏭 工厂类（高级用法）
+    │
+    ├── 📐 抽象接口层
+    │   ├── abc_time_info.py          时间信息接口
+    │   ├── abc_basic_info.py       基本信息接口
+    │   ├── abc_group_info.py       群组信息接口
+    │   ├── abc_message_info.py     消息信息接口（含合并转发）
+    │   └── abc_sender_info.py      发送者信息接口
+    │
+    └── ⚙️ 具体实现层
+        ├── time_info.py              时间信息实现
+        ├── basic_info.py           基本信息实现
+        ├── group_info.py           群组信息实现
+        ├── message_info.py       消息信息实现（递归解析嵌套）
+        └── sender_info.py          发送者信息实现
 │
 └── 📂 __pycache__/              Python 缓存（自动生成）
 ```
