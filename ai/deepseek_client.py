@@ -70,7 +70,7 @@ class DeepSeekClient:
                 "model": data.get("model", self.model)
             }
     
-    async def _stream_chat(self, session, payload, headers) -> AsyncGenerator[Dict[str, str], None, None]:
+    async def _stream_chat(self, session, payload, headers) -> AsyncGenerator[Dict[str, str], None]:
         payload["stream"] = True
         async with session.post(
             f"{self.BASE_URL}/chat/completions",
