@@ -31,6 +31,7 @@ class AIManager:
         message: str,
         group_id: Optional[str] = None,
         thinking: bool = False,
+        reasoning_effort: str = "medium",
         stream: bool = False
     ):
         key = self._get_conversation_key(user_id, group_id)
@@ -47,6 +48,7 @@ class AIManager:
             messages=self.conversation_history[key],
             system_prompt=self.system_prompt,
             thinking=thinking,
+            reasoning_effort=reasoning_effort,
             stream=stream
         )
         
