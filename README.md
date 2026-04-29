@@ -2,14 +2,15 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.8+-blue.svg" alt="Python">
-  <img src="https://img.shields.io/badge/Version-1.1.0-green.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-1.2.0-green.svg" alt="Version">
   <img src="https://img.shields.io/badge/Architecture-ABC%20Abstract-orange.svg" alt="ABC">
   <img src="https://img.shields.io/badge/Forward%20Message-Supported-brightgreen.svg" alt="Forward Message">
   <img src="https://img.shields.io/badge/DeepSeek-AI%20Enabled-blueviolet.svg" alt="DeepSeek AI">
+  <img src="https://img.shields.io/badge/Humanized-Decision%20System-red.svg" alt="Humanized AI">
   <img src="https://img.shields.io/badge/NcatBot-Plugin-purple.svg" alt="NcatBot">
 </p>
 
-> ✨ NcatBot 官方标准插件模板 - ABC 抽象类封装 + DeepSeek AI 智能对话
+> ✨ NcatBot 官方标准插件模板 - ABC 抽象类封装 + DeepSeek AI 智能对话 + 拟人化决策系统
 
 ---
 
@@ -166,6 +167,68 @@ group_name = data.group_info.get_group_name()
 | 💭 思考模式 | 支持 DeepSeek 深度思考模式 |
 | ⚡ 流式输出 | 支持流式响应接口 |
 | 📨 合并转发感知 | AI 可解析合并转发消息内容 |
+| 🤖 **拟人化决策** | 多因子综合评分，模拟人类作息/兴趣/疲劳 |
+
+---
+
+## 🎭 拟人化回复决策系统 v1.1
+
+### 核心设计理念
+
+模拟人类昼夜作息、记忆遗忘、兴趣偏好、社交感知与疲劳机制，实现群聊 Bot 动态回复决策，解决传统关键词 Bot 行为机械、刷屏突兀问题。
+
+### 🎯 决策公式
+
+```
+S = A(t) × [0.5×M + 0.3×E_hot + 0.2×(1−fatigue) + ε]
+```
+
+| 参数 | 权重 | 说明 |
+|------|------|------|
+| A(t) | - | 生物钟活跃度 [0,1] |
+| M | 0.5 | 话题匹配度 [0,1] |
+| E_hot | 0.3 | 热度激励因子 [0,1] |
+| fatigue | 0.2 | 疲劳度 [0,1] |
+| ε | - | ±0.05 随机扰动 |
+
+### ⚙️ 核心模块
+
+| 模块 | 文件 | 功能 |
+|------|------|------|
+| ⏰ 生物钟 | `ai/chronotype.py` | 昼夜节律模拟，支持朝九晚五/夜猫子/工作狂人设 |
+| 🧠 兴趣模型 | `ai/interest_model.py` | 艾宾浩斯遗忘曲线，多群隔离，SQLite 持久化 |
+| 🔥 热度评估 | `ai/heat_monitor.py` | 滑动窗口统计，热闹场景降低发言意愿 |
+| 😴 疲劳机制 | `ai/fatigue_manager.py` | 发言冷却、疲劳值恢复、人设可调 |
+| 🎯 决策引擎 | `ai/decision_engine.py` | 多因子综合评分，@强制回复 |
+| 🗣️ 主动发言 | `ai/active_speaker.py` | 冷场暖场触发，自动发起话题 |
+
+### 🌙 生物钟人设
+
+| 人设 | 描述 |
+|------|------|
+| `normal` | 标准朝九晚五：凌晨低活跃、日间高活跃、晚间社交 |
+| `night_owl` | 夜猫子：深夜活跃，白天休息 |
+| `workaholic` | 工作狂：工作时段极高活跃，其他时间偏低 |
+
+### 📊 实时日志
+
+```
+🤖 拟人化回复触发 - 评分: 0.68
+   活跃度: 0.95, 匹配度: 0.72
+   热度因子: 0.85, 疲劳度: 0.30
+```
+
+### 🎭 拟人化效果
+
+| 特性 | 说明 |
+|------|------|
+| 🌙 昼夜作息 | 凌晨低活跃仅响应 @，日间高活跃，深夜休眠 |
+| 🧠 兴趣演化 | 基于聊天沉淀兴趣，按日衰减 0.95 |
+| 🤝 社交分寸 | 刷屏场景降低发言，冷场主动暖场 |
+| 😴 疲劳机制 | 连续发言消耗疲劳，定时恢复 |
+| 📢 主动发言 | 群聊长时间冷场自动发起话题 |
+| 🔒 多群隔离 | 每群独立状态，行为完全差异化 |
+| ⚡ @强制回复 | 任意时段被 @ 立即响应 |
 
 ---
 
@@ -263,15 +326,25 @@ BaseFormatTemplate/
 ├── 📄 README.md               👈 本文档（中英文双语）
 ├── 📄 .gitignore              Git 忽略配置
 ├── 📄 manifest.toml           NcatBot 插件配置文件
-├── 📄 main.py                 插件主入口（含 AI 集成）
+├── 📄 main.py                 插件主入口（含 AI + 拟人化系统）
 ├── 📄 saveMessage.py            消息保存工具
 │
-├── 📂 ai/                     🤖 DeepSeek AI 模块
+├── 📂 ai/                     🤖 DeepSeek AI + 拟人化模块
 │   ├── 📄 __init__.py               模块导出
 │   ├── 📄 deepseek_client.py      DeepSeek API 客户端
-│   └── � ai_manager.py           对话管理器（上下文记忆）
+│   ├── 📄 ai_manager.py           对话管理器（上下文记忆）
+│   ├── 📄 chronotype.py           ⏰ 生物钟（昼夜节律）
+│   ├── 📄 interest_model.py        🧠 兴趣模型（遗忘曲线）
+│   ├── 📄 heat_monitor.py         🔥 热度评估（群聊氛围）
+│   ├── 📄 fatigue_manager.py      😴 疲劳机制（发言冷却）
+│   ├── 📄 decision_engine.py       🎯 决策引擎（综合评分）
+│   └── 📄 active_speaker.py       🗣️ 主动发言（冷场暖场）
 │
-└── �📂 lottery/                📐 数据封装核心模块
+├── 📂 utils/                  🔧 工具模块
+│   ├── 📄 __init__.py
+│   └── 📄 napcat_api.py           NapCat HTTP 接口调用
+│
+└── 📂 lottery/                📐 数据封装核心模块
     ├── 📄 __init__.py               模块导出
     ├── 📄 lottery_data.py         🎁 主入口类（你需要的）
     ├── 📄 lottery_factory.py      🏭 工厂类（高级用法）
@@ -280,7 +353,7 @@ BaseFormatTemplate/
     │   ├── abc_time_info.py          时间信息接口
     │   ├── abc_basic_info.py       基本信息接口
     │   ├── abc_group_info.py       群组信息接口
-    │   ├── abc_message_info.py     消息信息接口（含合并转发）
+    │   ├── abc_message_info.py     消息信息接口（含合并转发/@/回复引用）
     │   └── abc_sender_info.py      发送者信息接口
     │
     └── ⚙️ 具体实现层
@@ -289,8 +362,6 @@ BaseFormatTemplate/
         ├── group_info.py           群组信息实现
         ├── message_info.py       消息信息实现（递归解析嵌套）
         └── sender_info.py          发送者信息实现
-│
-└── 📂 __pycache__/              Python 缓存（自动生成）
 ```
 
 ---
