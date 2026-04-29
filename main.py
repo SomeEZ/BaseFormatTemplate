@@ -122,10 +122,7 @@ class BaseFormatTemplate(NcatBotPlugin):
             self.ai_manager.update_interest(group_id, text_content)
             
             if is_at_bot or has_deer_keyword or (has_reply and text_content and text_content != "无"):
-                thinking_msg_id = None
                 try:
-                    thinking_msg_id = getattr(thinking_msg, 'message_id', None) or getattr(thinking_msg, 'id', None)
-                    
                     ai_message = ""
                     if has_reply:
                         ai_message += "【用户引用回复了之前的消息】\n"
@@ -144,9 +141,6 @@ class BaseFormatTemplate(NcatBotPlugin):
                         reasoning_effort="high"
                     )
                     
-                    if thinking_msg_id:
-                        await NapCatAPI.delete_msg(int(thinking_msg_id))
-                    
                     await event.reply(text=result['content'])
                     self.ai_manager.record_reply(group_id)
                     
@@ -155,8 +149,6 @@ class BaseFormatTemplate(NcatBotPlugin):
                     
                 except Exception as e:
                     LOG.error(f"AI 回复失败: {e}")
-                    if thinking_msg_id:
-                        await NapCatAPI.delete_msg(int(thinking_msg_id))
                     await event.reply(text=f"❌ AI 出错了: {str(e)}")
             else:
                 decision = self.ai_manager.should_reply(group_id, text_content)
@@ -165,11 +157,7 @@ class BaseFormatTemplate(NcatBotPlugin):
                     LOG.info(f"   活跃度: {decision['breakdown']['activity']:.2f}, 匹配度: {decision['breakdown']['match_score']:.2f}")
                     LOG.info(f"   热度因子: {decision['breakdown']['heat_factor']:.2f}, 疲劳度: {decision['breakdown']['fatigue']:.2f}")
                     
-                    thinking_msg_id = None
                     try:
-                        thinking_msg = await event.reply(text="⏳ 思考中...")
-                        thinking_msg_id = getattr(thinking_msg, 'message_id', None) or getattr(thinking_msg, 'id', None)
-                        
                         result = await self.ai_manager.chat(
                             user_id=lottery.sender_info.get_user_id(),
                             message=text_content,
@@ -178,16 +166,11 @@ class BaseFormatTemplate(NcatBotPlugin):
                             reasoning_effort="medium"
                         )
                         
-                        if thinking_msg_id:
-                            await NapCatAPI.delete_msg(int(thinking_msg_id))
-                        
                         await event.reply(text=result['content'])
                         self.ai_manager.record_reply(group_id)
                         
                     except Exception as e:
                         LOG.error(f"拟人化回复失败: {e}")
-                        if thinking_msg_id:
-                            await NapCatAPI.delete_msg(int(thinking_msg_id))
             
             await self.ai_manager.try_active_speak(group_id)
 
@@ -229,10 +212,7 @@ class BaseFormatTemplate(NcatBotPlugin):
                 await event.reply(text="🤔 请输入您的问题")
                 return
         
-        thinking_msg_id = None
         try:
-            thinking_msg_id = getattr(thinking_msg, 'message_id', None) or getattr(thinking_msg, 'id', None)
-            
             ai_message = ""
             if has_reply:
                 ai_message += "【私聊中用户引用回复了之前的消息】\n"
@@ -248,15 +228,10 @@ class BaseFormatTemplate(NcatBotPlugin):
                 reasoning_effort="high"
             )
             
-            if thinking_msg_id:
-                await NapCatAPI.delete_msg(int(thinking_msg_id))
-            
             await event.reply(text=result['content'])
             
         except Exception as e:
             LOG.error(f"AI 私聊回复失败: {e}")
-            if thinking_msg_id:
-                await NapCatAPI.delete_msg(int(thinking_msg_id))
             await event.reply(text=f"❌ AI 出错了: {str(e)}")
 
     @registrar.on_private_command("hello", ignore_case=True)
