@@ -9,7 +9,7 @@ from .utils import NapCatAPI
 
 LOG = get_log("BaseFormatTemplate")
 
-DEEPSEEK_API_KEY = "AK-你的DeepSeek密钥，不要提交到公开仓库"
+DEEPSEEK_API_KEY = "sk-80462b3995814801a9cc1bf2980584f5"
 AI_TRIGGER = "小鹿"
 AI_MODEL = "deepseek-v4-flash"
 
@@ -114,9 +114,12 @@ class BaseFormatTemplate(NcatBotPlugin):
 
         if self.ai_manager:
             bot_id = str(lottery.basic_info.get_self_id())
+            group_id = str(lottery.group_info.get_group_id())
             is_at_bot = lottery.message_info.is_at_user(bot_id)
             has_deer_keyword = "小鹿" in text_content
             has_reply = lottery.message_info.has_reply()
+            
+            self.ai_manager.update_interest(group_id, text_content)
             
             if is_at_bot or has_deer_keyword or (has_reply and text_content and text_content != "无"):
                 thinking_msg_id = None
@@ -137,7 +140,7 @@ class BaseFormatTemplate(NcatBotPlugin):
                     result = await self.ai_manager.chat(
                         user_id=lottery.sender_info.get_user_id(),
                         message=ai_message,
-                        group_id=lottery.group_info.get_group_id(),
+                        group_id=group_id,
                         thinking=True,
                         reasoning_effort="high"
                     )
@@ -146,6 +149,7 @@ class BaseFormatTemplate(NcatBotPlugin):
                         await NapCatAPI.delete_msg(int(thinking_msg_id))
                     
                     await event.reply(text=result['content'])
+                    self.ai_manager.record_reply(group_id)
                     
                     if result['thinking']:
                         LOG.info(f"AI 思考过程: {result['thinking']}")
@@ -155,6 +159,38 @@ class BaseFormatTemplate(NcatBotPlugin):
                     if thinking_msg_id:
                         await NapCatAPI.delete_msg(int(thinking_msg_id))
                     await event.reply(text=f"❌ AI 出错了: {str(e)}")
+            else:
+                decision = self.ai_manager.should_reply(group_id, text_content)
+                if decision['should_reply']:
+                    LOG.info(f"🤖 拟人化回复触发 - 评分: {decision['score']:.2f}")
+                    LOG.info(f"   活跃度: {decision['breakdown']['activity']:.2f}, 匹配度: {decision['breakdown']['match_score']:.2f}")
+                    LOG.info(f"   热度因子: {decision['breakdown']['heat_factor']:.2f}, 疲劳度: {decision['breakdown']['fatigue']:.2f}")
+                    
+                    thinking_msg_id = None
+                    try:
+                        thinking_msg = await event.reply(text="⏳ 思考中...")
+                        thinking_msg_id = getattr(thinking_msg, 'message_id', None) or getattr(thinking_msg, 'id', None)
+                        
+                        result = await self.ai_manager.chat(
+                            user_id=lottery.sender_info.get_user_id(),
+                            message=text_content,
+                            group_id=group_id,
+                            thinking=False,
+                            reasoning_effort="medium"
+                        )
+                        
+                        if thinking_msg_id:
+                            await NapCatAPI.delete_msg(int(thinking_msg_id))
+                        
+                        await event.reply(text=result['content'])
+                        self.ai_manager.record_reply(group_id)
+                        
+                    except Exception as e:
+                        LOG.error(f"拟人化回复失败: {e}")
+                        if thinking_msg_id:
+                            await NapCatAPI.delete_msg(int(thinking_msg_id))
+            
+            await self.ai_manager.try_active_speak(group_id)
 
     @registrar.on_group_command("hello", ignore_case=True)
     async def on_hello(self, event: GroupMessageEvent):
