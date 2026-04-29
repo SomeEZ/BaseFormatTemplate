@@ -4,16 +4,17 @@ from typing import Dict, Optional
 
 class DecisionEngine:
     def __init__(self, persona: str = 'normal'):
-        self.WEIGHT_M = 0.5
+        self.WEIGHT_M = 0.4
         self.WEIGHT_E = 0.3
         self.WEIGHT_F = 0.2
+        self.WEIGHT_BASE = 0.1
         
         if persona == 'talkative':
-            self.THRESHOLD = 0.4
+            self.THRESHOLD = 0.35
         elif persona == '高冷':
-            self.THRESHOLD = 0.6
-        else:
             self.THRESHOLD = 0.5
+        else:
+            self.THRESHOLD = 0.4
     
     def calculate_score(
         self,
@@ -30,6 +31,7 @@ class DecisionEngine:
             self.WEIGHT_M * match_score +
             self.WEIGHT_E * heat_factor +
             self.WEIGHT_F * (1 - fatigue) +
+            self.WEIGHT_BASE +
             random.uniform(-0.05, 0.05)
         )
         

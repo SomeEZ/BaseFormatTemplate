@@ -23,7 +23,7 @@ class ActiveSpeaker:
         ]
     
     async def try_active_speak(self, group_id: str, activity: float, is_cold: bool):
-        if activity < 0.5:
+        if activity < 0.3:
             return False
         
         if not is_cold:
@@ -31,7 +31,7 @@ class ActiveSpeaker:
         
         if group_id in self.group_last_active:
             last_active = self.group_last_active[group_id]
-            if datetime.now().timestamp() - last_active < 3600:
+            if datetime.now().timestamp() - last_active < 1800:
                 return False
         
         topic = random.choice(self.topics)
