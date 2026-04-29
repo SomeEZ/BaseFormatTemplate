@@ -124,7 +124,6 @@ class BaseFormatTemplate(NcatBotPlugin):
             if is_at_bot or has_deer_keyword or (has_reply and text_content and text_content != "无"):
                 thinking_msg_id = None
                 try:
-                    thinking_msg = await event.reply(text="⏳ 深度思考中...")
                     thinking_msg_id = getattr(thinking_msg, 'message_id', None) or getattr(thinking_msg, 'id', None)
                     
                     ai_message = ""
@@ -232,7 +231,6 @@ class BaseFormatTemplate(NcatBotPlugin):
         
         thinking_msg_id = None
         try:
-            thinking_msg = await event.reply(text="⏳ 深度思考中...")
             thinking_msg_id = getattr(thinking_msg, 'message_id', None) or getattr(thinking_msg, 'id', None)
             
             ai_message = ""
