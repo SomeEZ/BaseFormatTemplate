@@ -138,7 +138,8 @@ class BaseFormatTemplate(NcatBotPlugin):
                         message=ai_message,
                         group_id=group_id,
                         thinking=True,
-                        reasoning_effort="high"
+                        reasoning_effort="high",
+                        image_urls=image_urls if image_urls else None
                     )
                     
                     await event.reply(text=result['content'])
@@ -204,10 +205,13 @@ class BaseFormatTemplate(NcatBotPlugin):
         user_id = lottery.sender_info.get_user_id()
         user_message = lottery.message_info.get_text_content()
         has_reply = lottery.message_info.has_reply()
+        image_urls = lottery.message_info.get_image_urls()
         
         if not user_message or user_message == "无":
             if has_reply:
                 user_message = "（引用回复了消息）"
+            elif image_urls:
+                user_message = "（发送了图片）"
             else:
                 await event.reply(text="🤔 请输入您的问题")
                 return
@@ -225,7 +229,8 @@ class BaseFormatTemplate(NcatBotPlugin):
                 message=ai_message,
                 group_id=None,
                 thinking=True,
-                reasoning_effort="high"
+                reasoning_effort="high",
+                image_urls=image_urls if image_urls else None
             )
             
             await event.reply(text=result['content'])

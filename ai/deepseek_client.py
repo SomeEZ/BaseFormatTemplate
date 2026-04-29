@@ -1,4 +1,6 @@
 import aiohttp
+import os
+import tempfile
 from typing import List, Dict, Optional, AsyncGenerator
 
 
@@ -95,6 +97,57 @@ class DeepSeekClient:
                             }
                     except:
                         pass
+    
+    async def download_image(self, url: str) -> Optional[str]:
+        try:
+            session = await self._get_session()
+            async with session.get(url) as response:
+                if response.status == 200:
+                    content = await response.read()
+                    fd, path = tempfile.mkstemp(suffix='.jpg')
+                    with os.fdopen(fd, 'wb') as f:
+                        f.write(content)
+                    return path
+                return None
+        except Exception:
+            return None
+    
+    async def upload_image(self, file_path: str) -> Optional[str]:
+        try:
+            session = await self._get_session()
+            headers = {
+                "Authorization": f"Bearer {self.api_key}"
+            }
+            
+            with open(file_path, 'rb') as f:
+                data = aiohttp.FormData()
+                data.add_field('file', f, filename=os.path.basename(file_path))
+                
+                async with session.post(
+                    f"{self.BASE_URL}/files/upload",
+                    headers=headers,
+                    data=data
+                ) as response:
+                    result = await response.json()
+                    if 'file_id' in result:
+                        return result['file_id']
+                    return None
+        except Exception:
+            return None
+    
+    async def process_images(self, image_urls: List[str]) -> List[str]:
+        image_ids = []
+        for url in image_urls:
+            temp_path = await self.download_image(url)
+            if temp_path:
+                try:
+                    image_id = await self.upload_image(temp_path)
+                    if image_id:
+                        image_ids.append(image_id)
+                finally:
+                    if os.path.exists(temp_path):
+                        os.remove(temp_path)
+        return image_ids
     
     async def close(self):
         if self.session and not self.session.closed:
